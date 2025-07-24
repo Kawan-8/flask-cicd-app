@@ -1,0 +1,30 @@
+name: Deploy Flask App
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up SSH key
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan -H 192.168.122.176 >> ~/.ssh/known_hosts
+
+    - name: Deploy to VM
+      run: |
+        ssh perf@192.16.122.176 << 'EOF'
+          cd ~/my-python-app || git clone https://github.com/Kawan-8/flask-cicd-app.git my-python-app && cd my-python-app
+          git pull
+          pkill -f app.py || true
+          nohup python3 app.py &
+        EOF
